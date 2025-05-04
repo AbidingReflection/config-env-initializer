@@ -24,22 +24,19 @@ def validate_config_against_schema(config: dict, schema_module) -> dict:
 
     return validated
 
-
 def _extract_schema(schema_module):
     schema = getattr(schema_module, "schema", None)
     if not isinstance(schema, dict):
         raise ValueError("schema.py must define a `schema` dictionary.")
     return schema
 
-
 def _extract_custom_validators(schema_module):
-    if hasattr(schema_module, "custom_validators"):
-        validators = schema_module.custom_validators()
-        if not isinstance(validators, dict):
-            raise TypeError("custom_validators() must return a dictionary of callable validators.")
-        return validators
-    return {}
-
+    validators = getattr(schema_module, "custom_validators", None)
+    if callable(validators):
+        validators = validators()
+    if validators and not isinstance(validators, dict):
+        raise TypeError("custom_validators must be a dictionary or a function that returns a dictionary.")
+    return validators or {}
 
 def _apply_defaults_and_check_required(key, value, rules):
     required = rules.get("required", False)
@@ -52,7 +49,6 @@ def _apply_defaults_and_check_required(key, value, rules):
 
     return value
 
-
 def _check_type(key, value, rules):
     expected_type = rules.get("type")
     if expected_type and not isinstance(value, expected_type):
@@ -61,15 +57,24 @@ def _check_type(key, value, rules):
             f"but got {type(value).__name__}."
         )
 
-
 def _run_validators(key, value, rules, custom_validators, errors):
-    for validator_spec in rules.get("validators", []):
+    validator_specs = rules.get("validators") or []
+    if rules.get("validator") and not validator_specs:
+        validator_specs = [rules["validator"]]
+
+    for validator_spec in validator_specs:
         if isinstance(validator_spec, str):
             validator_name = validator_spec
             args = {}
         elif isinstance(validator_spec, dict):
             validator_name = validator_spec.get("name")
             args = {k: v for k, v in validator_spec.items() if k != "name"}
+        elif callable(validator_spec):
+            try:
+                validator_spec(value)
+            except Exception as e:
+                errors.append(f"[{key}] inline validator: {str(e)}")
+            continue
         else:
             errors.append(f"[{key}] Invalid validator format: {validator_spec}")
             continue
@@ -91,3 +96,77 @@ def _run_validators(key, value, rules, custom_validators, errors):
             validator(value, key, **args)
         except Exception as e:
             errors.append(f"[{key}] {validator_name}: {str(e)}")
+
+def generate_config_template(schema_module, include_required_placeholders=True) -> dict:
+    """
+    Generate a config dictionary from a schema, including default values and placeholders
+    for required fields that lack defaults.
+
+    Args:
+        schema_module: The loaded schema module.
+        include_required_placeholders (bool): If True, fill missing required keys with "<REQUIRED>".
+
+    Returns:
+        dict: A dictionary representing the template config.
+    """
+    schema = _extract_schema(schema_module)
+    template = {}
+
+    for key, rules in schema.items():
+        default = rules.get("default", None)
+        required = rules.get("required", False)
+
+        if default is not None:
+            template[key] = default
+        elif required and include_required_placeholders:
+            template[key] = "<REQUIRED>"
+
+    return template
+
+def validate_schema_file(schema_module):
+    """
+    Validates the structure and logic of a schema module.
+
+    Raises:
+        ValidationError: If issues are found with the schema.
+    """
+    errors = []
+    schema = _extract_schema(schema_module)
+    custom_validators = _extract_custom_validators(schema_module)
+
+    for key, rules in schema.items():
+        if not isinstance(rules, dict):
+            errors.append(f"[{key}] Schema rules must be a dictionary.")
+            continue
+
+        if "type" not in rules:
+            errors.append(f"[{key}] Missing required 'type' key in schema rules.")
+
+        if "required" not in rules:
+            errors.append(f"[{key}] Missing required 'required' key in schema rules.")
+
+        validator_specs = rules.get("validators") or []
+        if rules.get("validator") and not validator_specs:
+            validator_specs = [rules["validator"]]
+
+        for validator_spec in validator_specs:
+            if isinstance(validator_spec, str):
+                if validator_spec not in custom_validators and not hasattr(ConfigValidator, validator_spec):
+                    errors.append(
+                        f"[{key}] Validator '{validator_spec}' not found in custom_validators or ConfigValidator."
+                    )
+            elif isinstance(validator_spec, dict):
+                name = validator_spec.get("name")
+                if not name:
+                    errors.append(f"[{key}] Validator dict missing 'name' key: {validator_spec}")
+                elif name not in custom_validators and not hasattr(ConfigValidator, name):
+                    errors.append(
+                        f"[{key}] Validator dict references unknown name '{name}' not found in custom_validators or ConfigValidator."
+                    )
+            elif not callable(validator_spec):
+                errors.append(f"[{key}] Invalid validator format: {validator_spec}")
+
+    if errors:
+        raise ValidationError(errors)
+
+    return True

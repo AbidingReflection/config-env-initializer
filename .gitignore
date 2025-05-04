@@ -2,3 +2,5 @@ __pycache__/
 *.pyc
 venv/
 *.log
+*.egg-info/
+scripts/file_tree_output/archive

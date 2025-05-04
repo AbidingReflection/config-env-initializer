@@ -1,0 +1,56 @@
+Target Path: C:\Users\decjg\projects\config-env-initializer
+Output Path: C:\Users\decjg\projects\config-env-initializer\scripts\file_tree_output\file_tree_250504Z231154.txt
+
+config-env-initializer/
+├── .gitignore
+├── README.md
+├── config_env_initializer/
+│   ├── __init__.py
+│   ├── __main__.py
+│   ├── config_loader.py
+│   ├── config_normalizer.py
+│   ├── config_validator.py
+│   ├── exceptions.py
+│   ├── logger_setup.py
+│   ├── project_setup.py
+│   ├── schema_utils.py
+│   └── sensitive.py
+├── example_project/
+│   ├── config/
+│   ├── db/
+│   └── schema/
+│       └── schema.py
+├── features.md
+├── pyproject.toml
+├── requirements.txt
+├── scripts/
+│   ├── file_tree_output/
+│   │   └── file_tree_250504Z231154.txt
+│   └── generate_file_tree.py
+└── tests/
+    ├── test_init_folders.py
+    ├── test_schema_import_behavior.py
+    └── test_schema_validation.py
+
+Exclusions:
+  Prefixes:
+    - None
+  Suffixes:
+    - .swp
+    - .egg-info
+  Filetypes:
+    - pyc
+    - log
+  Folders:
+    - .git
+    - venv
+    - __pycache__
+    - logs
+    - .pytest_cache
+    - output
+    - archive
+    - .DS_Store
+
+Summary:
+  Folders: 8
+  Files: 21

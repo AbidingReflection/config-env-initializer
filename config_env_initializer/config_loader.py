@@ -7,6 +7,7 @@ from config_env_initializer.sensitive import SensitiveValue, mask_config_for_log
 from config_env_initializer.config_normalizer import normalize_config_keys
 from config_env_initializer.logger_setup import prepare_logger
 
+from config_env_initializer.exceptions import ValidationError
 
 class ConfigLoader:
     def __init__(self, config_path_str: str, schema_path_str: str = None):
@@ -22,7 +23,12 @@ class ConfigLoader:
 
         # Load and apply schema
         schema_module = self._load_schema_module(self.schema_path)
-        validated_config = validate_config_against_schema(normalized_config, schema_module)
+        try:
+            validated_config = validate_config_against_schema(normalized_config, schema_module)
+        except ValidationError as ve:
+            error_list = ve.args[0] if isinstance(ve.args[0], list) else [str(ve)]
+            formatted = "\n".join(error_list)
+            raise ValidationError(f"Config validation failed with the following errors:\n{formatted}")
 
         # Load auth blocks
         auth_data = self._load_auth_paths(validated_config)
@@ -42,11 +48,12 @@ class ConfigLoader:
         self.logger = logger
         self.auth_keys = list(auth_data.keys())
 
+
     def _resolve_path(self, path_str: str) -> Path:
         return Path(path_str).expanduser().resolve()
 
     def _default_schema_path(self) -> Path:
-        return (Path(__file__).parent.parent / "schema" / "schema.py").resolve()
+        return (Path.cwd() / "schema" / "schema.py").resolve()
 
     def _assert_exists(self, path: Path, label: str):
         if not path.is_file():
