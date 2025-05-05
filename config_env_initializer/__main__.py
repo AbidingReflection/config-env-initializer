@@ -7,6 +7,8 @@ from config_env_initializer.config_loader import ConfigLoader
 from config_env_initializer.project_setup import initialize_folders, get_folder_paths
 from config_env_initializer.schema_utils import generate_config_template, validate_schema_file
 from config_env_initializer.exceptions import ValidationError
+from config_env_initializer.config_utils import generate_config
+from config_env_initializer.config_utils import generate_config, validate_config
 
 
 def load_schema_module(schema_path: Path):
@@ -63,20 +65,29 @@ def main():
 
     elif args.command == "validate-config":
         try:
-            loader = ConfigLoader(args.config_path, args.schema_path)
-            print("[SUCCESS] Config is valid.")
-            sys.exit(0)
+            schema_path = Path(args.schema_path) if args.schema_path else Path.cwd() / "schema" / "schema.py"
+            config_path = Path(args.config_path)
+
+            errors = validate_config(config_path=config_path, schema_path=schema_path)
+
+            if errors:
+                print("[ERROR] Config failed validation:")
+                for err in errors:
+                    print(f"  - {err}")
+                sys.exit(1)
+            else:
+                print("[SUCCESS] Config is valid.")
+                sys.exit(0)
+
         except Exception as e:
-            print(f"[ERROR] Config failed validation:\n{e}")
-            sys.exit(1)
+            print(f"[ERROR] Unexpected validation error:\n  {e}")
+            sys.exit(2)
 
     elif args.command == "init-folders":
         try:
             schema_path = Path(args.schema_path) if args.schema_path else Path.cwd() / "schema" / "schema.py"
             schema_module = load_schema_module(schema_path)
             validate_schema_file(schema_module)
-
-            config_template = generate_config_template(schema_module)
             project_root = Path.cwd()
 
 
@@ -99,10 +110,22 @@ def main():
                 initialize_folders(folders, project_root=project_root)
                 print("[SUCCESS] Folders initialized successfully.")
                 sys.exit(0)
-
         except Exception as e:
             print(f"[ERROR] Folder initialization failed:\n{e}")
             sys.exit(2)
+
+    elif args.command == "generate-config":
+        try:
+            schema_path = Path(args.schema_path)
+            generate_config(schema_path=schema_path)
+            print("[SUCCESS] Config template generated.")
+            sys.exit(0)
+        except Exception as e:
+            print(f"[ERROR] Config generation failed:\n{e}")
+            sys.exit(3)
+
+
+
 
 
 if __name__ == "__main__":

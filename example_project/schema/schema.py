@@ -53,9 +53,9 @@ schema = {
     },
     "db_dir": {
         "type": str,
-        "required": False,
+        "required": True,
         "validators": [],
-        "default": "db"
+        "default": None
     },
     "qtest_auth_path": {
         "type": str,

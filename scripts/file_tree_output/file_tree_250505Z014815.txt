@@ -1,5 +1,5 @@
 Target Path: C:\Users\decjg\projects\config-env-initializer
-Output Path: C:\Users\decjg\projects\config-env-initializer\scripts\file_tree_output\file_tree_250504Z231154.txt
+Output Path: C:\Users\decjg\projects\config-env-initializer\scripts\file_tree_output\file_tree_250505Z014815.txt
 
 config-env-initializer/
 ├── .gitignore
@@ -9,6 +9,7 @@ config-env-initializer/
 │   ├── __main__.py
 │   ├── config_loader.py
 │   ├── config_normalizer.py
+│   ├── config_utils.py
 │   ├── config_validator.py
 │   ├── exceptions.py
 │   ├── logger_setup.py
@@ -17,6 +18,7 @@ config-env-initializer/
 │   └── sensitive.py
 ├── example_project/
 │   ├── config/
+│   ├── configs/
 │   ├── db/
 │   └── schema/
 │       └── schema.py
@@ -25,16 +27,18 @@ config-env-initializer/
 ├── requirements.txt
 ├── scripts/
 │   ├── file_tree_output/
-│   │   └── file_tree_250504Z231154.txt
+│   │   └── file_tree_250505Z014815.txt
 │   └── generate_file_tree.py
 └── tests/
+    ├── test_generate_config.py
     ├── test_init_folders.py
     ├── test_schema_import_behavior.py
-    └── test_schema_validation.py
+    ├── test_schema_validation.py
+    └── test_validate_config.py
 
 Exclusions:
   Prefixes:
-    - None
+    - generated_config_
   Suffixes:
     - .swp
     - .egg-info
@@ -52,5 +56,5 @@ Exclusions:
     - .DS_Store
 
 Summary:
-  Folders: 8
-  Files: 21
+  Folders: 9
+  Files: 24

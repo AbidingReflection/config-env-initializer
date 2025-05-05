@@ -109,7 +109,7 @@ if __name__ == "__main__":
     output_dir.mkdir(exist_ok=True)
 
     exclude_config = {
-        "prefixes": [],
+        "prefixes": ["generated_config_"],
         "suffixes": [".swp", ".egg-info"],
         "filetypes": ["pyc", "log"],
         "folders": ['.git', 'venv', '__pycache__', 'logs', '.pytest_cache', 'output', 'archive', '.DS_Store']

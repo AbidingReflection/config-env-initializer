@@ -4,3 +4,4 @@ venv/
 *.log
 *.egg-info/
 scripts/file_tree_output/archive
+generated_config_*

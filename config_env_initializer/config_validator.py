@@ -25,14 +25,13 @@ class ConfigValidator:
         }
 
     @staticmethod
-    def log_level_valid(value):
-        """Validate log level is one of the standard logging levels."""
+    def log_level_valid(value, key=None):
         allowed = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
         if not isinstance(value, str):
-            return False, f"Expected string for log_level, got {type(value).__name__}"
+            raise ValueError(f"{key} must be a string.")
         if value.upper() not in allowed:
-            return False, f"Invalid log_level '{value}'. Must be one of {sorted(allowed)}"
-        return True, None
+            raise ValueError(f"{key}='{value}' is invalid. Must be one of {sorted(allowed)}.")
+
 
     # @staticmethod
     # def int_in_range(min_value: int, max_value: int):
