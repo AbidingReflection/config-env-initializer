@@ -1,5 +1,5 @@
 Target Path: C:\Users\decjg\projects\config-env-initializer
-Output Path: C:\Users\decjg\projects\config-env-initializer\scripts\file_tree_output\file_tree_250505Z014815.txt
+Output Path: C:\Users\decjg\projects\config-env-initializer\scripts\file_tree_output\file_tree_250505Z032909.txt
 
 config-env-initializer/
 ├── .gitignore
@@ -17,9 +17,12 @@ config-env-initializer/
 │   ├── schema_utils.py
 │   └── sensitive.py
 ├── example_project/
-│   ├── config/
+│   ├── auth/
+│   │   └── qtest/
+│   │       └── example.yaml
 │   ├── configs/
 │   ├── db/
+│   ├── main.py
 │   └── schema/
 │       └── schema.py
 ├── features.md
@@ -27,14 +30,15 @@ config-env-initializer/
 ├── requirements.txt
 ├── scripts/
 │   ├── file_tree_output/
-│   │   └── file_tree_250505Z014815.txt
+│   │   └── file_tree_250505Z032909.txt
 │   └── generate_file_tree.py
 └── tests/
     ├── test_generate_config.py
     ├── test_init_folders.py
     ├── test_schema_import_behavior.py
     ├── test_schema_validation.py
-    └── test_validate_config.py
+    ├── test_validate_config.py
+    └── test_validation_errors.py
 
 Exclusions:
   Prefixes:
@@ -56,5 +60,5 @@ Exclusions:
     - .DS_Store
 
 Summary:
-  Folders: 9
-  Files: 24
+  Folders: 10
+  Files: 27

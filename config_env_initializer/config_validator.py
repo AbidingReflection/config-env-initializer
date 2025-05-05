@@ -4,7 +4,7 @@ OPTIONAL_PLACEHOLDER = "<OPTIONAL>"
 def is_placeholder(value: str) -> bool:
     return isinstance(value, str) and value.strip().startswith("<") and value.strip().endswith(">")
 
-class ConfigValidator:
+class ConfigValidator: 
     @classmethod
     def get_all_validators(cls):
         return {
@@ -69,3 +69,12 @@ class ConfigValidator:
         if is_placeholder(value):
             raise ValueError(f"{key} contains unresolved placeholder value: {value}")
 
+    @staticmethod
+    def int_in_range(*, min_value: int, max_value: int):
+        """Returns a validator that checks if an int is within [min_value, max_value]."""
+        def validator(value, key=None):
+            if not isinstance(value, int):
+                raise ValueError(f"{key} must be an integer.")
+            if not (min_value <= value <= max_value):
+                raise ValueError(f"{key}={value} not in range [{min_value}, {max_value}]")
+        return validator

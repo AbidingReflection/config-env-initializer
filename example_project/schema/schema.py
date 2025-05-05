@@ -2,18 +2,25 @@ from config_env_initializer.config_validator import ConfigValidator
 
 class CustomValidator(ConfigValidator):
     @staticmethod
-    def int_in_range(*, min_value: int, max_value: int):
-        """Returns a validator that checks if an int is within [min_value, max_value]."""
+    def string_in_string(*, input_str: str):
+        """
+        Returns a validator that checks if the given input_str is contained within the value.
+
+        Args:
+            input_str (str): The substring that must be present in the value.
+        """
         def validator(value, key=None):
-            if not isinstance(value, int):
-                raise ValueError(f"{key} must be an integer.")
-            if not (min_value <= value <= max_value):
-                raise ValueError(f"{key}={value} not in range [{min_value}, {max_value}]")
+            if not isinstance(value, str):
+                raise ValueError(f"{key} must be a string.")
+            if input_str not in value:
+                raise ValueError(f"{key} must contain the substring '{input_str}'. Got: '{value}'")
+
         return validator
 
 custom_validators = {
     **CustomValidator.get_all_validators()
 }
+
 
 
 project_dirs = ["config", "db"]
@@ -48,7 +55,7 @@ schema = {
     "output_dir": {
         "type": str,
         "required": False,
-        "validators": [],  
+        "validators": [{"name": "string_in_string", "input_str": "out"}],  
         "default": "output"
     },
     "db_dir": {

@@ -8,7 +8,7 @@ def main():
     config = loader.config
 
     print("\nLoaded and validated config:")
-    pprint(config)
+    pprint(config, indent=4)
 
 if __name__ == "__main__":
     main()
