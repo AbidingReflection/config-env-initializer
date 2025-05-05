@@ -17,37 +17,46 @@ class ConfigLoader:
         self._assert_exists(self.config_path, "YAML config")
         self._assert_exists(self.schema_path, "Schema")
 
-        # Load and normalize config
-        raw_config = self._load_yaml(self.config_path)
+        self.raw_config = self._load_yaml(self.config_path)
+        self.schema_module = self._load_schema_module(self.schema_path)
+
+        self.config = self._load_and_validate_config(self.raw_config, self.schema_module)
+        self.auth = self._load_auth_data()
+        self.logger = self._setup_logger()
+
+        self.config["auth"] = self.auth
+        self.config["logger"] = self.logger
+        self.auth_keys = list(self.auth.keys())
+
+    def _load_and_validate_config(self, raw_config: dict, schema_module) -> dict:
         normalized_config = normalize_config_keys(raw_config)
-
-        # Load and apply schema
-        schema_module = self._load_schema_module(self.schema_path)
         try:
-            validated_config = validate_config_against_schema(normalized_config, schema_module)
-        except ValidationError as ve:
-            error_list = ve.args[0] if isinstance(ve.args[0], list) else [str(ve)]
-            formatted = "\n".join(error_list)
-            raise ValidationError(f"Config validation failed with the following errors:\n{formatted}")
+            return validate_config_against_schema(normalized_config, schema_module)
+        except ValidationError:
+            raise
 
-        # Load auth blocks
-        auth_data = self._load_auth_paths(validated_config)
-        validated_config["auth"] = auth_data
 
-        # Prepare logger based on config
-        log_path = Path(validated_config["log_dir"])
-        use_micro = validated_config["log_microseconds"]
-        log_level = validated_config["log_level"]
-        prefix = validated_config.get("log_prefix", "")
-        logger = prepare_logger(log_path, output_name_prefix=prefix, use_microseconds=use_micro, log_level=log_level)
-        validated_config["logger"] = logger
 
-        # Final assignments
-        self.config = validated_config
-        self.auth = auth_data
-        self.logger = logger
-        self.auth_keys = list(auth_data.keys())
 
+    def _setup_logger(self):
+        log_path = Path(self.config["log_dir"])
+        use_micro = self.config["log_microseconds"]
+        log_level = self.config["log_level"]
+        prefix = self.config.get("log_prefix", "")
+        return prepare_logger(log_path, output_name_prefix=prefix, use_microseconds=use_micro, log_level=log_level)
+
+    def _load_auth_data(self) -> dict:
+        auth_data = {}
+        for key, value in self.config.items():
+            if key.endswith("_auth_path"):
+                system = key.replace("_auth_path", "")
+                path = self._resolve_path(value)
+                self._assert_exists(path, f"{system} auth")
+                raw_auth = self._load_yaml(path)
+                if not isinstance(raw_auth, dict):
+                    raise ValueError(f"{key} must point to a YAML file with key-value pairs.")
+                auth_data[system] = {k: SensitiveValue(v) for k, v in raw_auth.items()}
+        return auth_data
 
     def _resolve_path(self, path_str: str) -> Path:
         return Path(path_str).expanduser().resolve()
@@ -71,26 +80,6 @@ class ConfigLoader:
         schema_module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(schema_module)
         return schema_module
-
-    def _load_auth_paths(self, config: dict) -> dict:
-        auth_data = {}
-
-        for key, value in config.items():
-            if key.endswith("_auth_path"):
-                system = key.replace("_auth_path", "")
-                path = self._resolve_path(value)
-                self._assert_exists(path, f"{system} auth")
-
-                with path.open("r", encoding="utf-8") as f:
-                    raw_auth = yaml.safe_load(f)
-
-                if not isinstance(raw_auth, dict):
-                    raise ValueError(f"{key} must point to a YAML file with key-value pairs.")
-
-                wrapped = {k: SensitiveValue(v) for k, v in raw_auth.items()}
-                auth_data[system] = wrapped
-
-        return auth_data
 
     def get_masked_config(self) -> dict:
         return mask_config_for_logging(self.config)

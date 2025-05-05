@@ -2,7 +2,7 @@ from config_env_initializer.config_validator import ConfigValidator
 
 class CustomValidator(ConfigValidator):
     @staticmethod
-    def int_in_range(min_value: int, max_value: int):
+    def int_in_range(*, min_value: int, max_value: int):
         """Returns a validator that checks if an int is within [min_value, max_value]."""
         def validator(value, key=None):
             if not isinstance(value, int):

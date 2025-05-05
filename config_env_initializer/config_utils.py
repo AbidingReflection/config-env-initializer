@@ -4,7 +4,7 @@ import importlib.util
 import sys
 import yaml
 
-from config_env_initializer.config_validator import ConfigValidator
+from config_env_initializer.config_validator import is_placeholder, REQUIRED_PLACEHOLDER, OPTIONAL_PLACEHOLDER
 
 
 def import_schema_module(schema_path: Path):
@@ -73,22 +73,18 @@ def generate_config(schema_path: Path = Path("schema/schema.py")):
 
         if default is not None:
             value = default
-            comment = ""
         elif not required:
-            value = "<OPTIONAL>"
-            comment = "optional"
+            value = OPTIONAL_PLACEHOLDER
         else:
-            value = "<REQUIRED>"
-            comment = "required"
+            value = REQUIRED_PLACEHOLDER
 
         line = yaml.dump({key: value}, default_flow_style=False).strip()
-        lines.append(f"{line}  # {comment}" if comment else line)
+        lines.append(line)
 
     with open(output_file, "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
 
     print(f"Generated config written to: {output_file}")
-
 
 def validate_config(config_path: Path, schema_path: Path = Path("schema/schema.py")):
     """Validate a config YAML file against the schema and return a list of error strings."""
@@ -106,7 +102,7 @@ def validate_config(config_path: Path, schema_path: Path = Path("schema/schema.p
     for key, rules in schema.items():
         value = config.get(key, None)
 
-        if isinstance(value, str) and value.strip().startswith("<") and value.strip().endswith(">"):
+        if is_placeholder(value):
             errors.append(f"{key}: contains placeholder value '{value}', must be replaced")
             continue
 

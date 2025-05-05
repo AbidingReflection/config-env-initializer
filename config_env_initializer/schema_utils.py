@@ -1,6 +1,8 @@
 from copy import deepcopy
 from config_env_initializer.config_validator import ConfigValidator
 from config_env_initializer.exceptions import ValidationError
+from config_env_initializer.config_utils import is_placeholder
+
 
 
 def validate_config_against_schema(config: dict, schema_module) -> dict:
@@ -58,33 +60,39 @@ def _check_type(key, value, rules):
         )
 
 def _run_validators(key, value, rules, custom_validators, errors):
+    if isinstance(value, str) and is_placeholder(value):
+        errors.append(f"[{key}] contains unresolved placeholder: {value}")
+        return
+
     validator_specs = rules.get("validators") or []
     if rules.get("validator") and not validator_specs:
         validator_specs = [rules["validator"]]
 
     for validator_spec in validator_specs:
-        if isinstance(validator_spec, str):
-            validator_name = validator_spec
-            args = {}
-        elif isinstance(validator_spec, dict):
-            validator_name = validator_spec.get("name")
-            args = {k: v for k, v in validator_spec.items() if k != "name"}
-        elif callable(validator_spec):
+        # Inline callable (e.g., a lambda or function)
+        if callable(validator_spec):
             try:
                 validator_spec(value)
             except Exception as e:
                 errors.append(f"[{key}] inline validator: {str(e)}")
             continue
+
+        # Named string
+        if isinstance(validator_spec, str):
+            validator_name = validator_spec
+            args = {}
+        # Parametrized dict
+        elif isinstance(validator_spec, dict):
+            validator_name = validator_spec.get("name")
+            args = {k: v for k, v in validator_spec.items() if k != "name"}
         else:
             errors.append(f"[{key}] Invalid validator format: {validator_spec}")
             continue
 
-        validator = None
-
         if validator_name in custom_validators:
-            validator = custom_validators[validator_name]
+            validator_factory = custom_validators[validator_name]
         elif hasattr(ConfigValidator, validator_name):
-            validator = getattr(ConfigValidator, validator_name)
+            validator_factory = getattr(ConfigValidator, validator_name)
         else:
             errors.append(
                 f"[{key}] Validator '{validator_name}' not found. "
@@ -93,7 +101,12 @@ def _run_validators(key, value, rules, custom_validators, errors):
             continue
 
         try:
-            validator(value, key, **args)
+            # Handle factory-style (dict-based) validators
+            if isinstance(validator_spec, dict):
+                validator_fn = validator_factory(**args)
+                validator_fn(value, key)
+            else:
+                validator_factory(value, key)
         except Exception as e:
             errors.append(f"[{key}] {validator_name}: {str(e)}")
 
