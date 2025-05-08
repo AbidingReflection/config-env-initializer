@@ -1,13 +1,12 @@
 from copy import deepcopy
-from config_env_initializer.config_validator import ConfigValidator
+from config_env_initializer.config_validator import ConfigValidator, CustomValidator
 from config_env_initializer.exceptions import ValidationError
 from config_env_initializer.config_utils import is_placeholder
 
 
-
 def validate_config_against_schema(config: dict, schema_module) -> dict:
     schema = _extract_schema(schema_module)
-    custom_validators = _extract_custom_validators(schema_module)
+    custom_validators = CustomValidator.get_all_validators()
     validated = deepcopy(config)
     errors = []
 
@@ -26,19 +25,13 @@ def validate_config_against_schema(config: dict, schema_module) -> dict:
 
     return validated
 
+
 def _extract_schema(schema_module):
     schema = getattr(schema_module, "schema", None)
     if not isinstance(schema, dict):
         raise ValueError("schema.py must define a `schema` dictionary.")
     return schema
 
-def _extract_custom_validators(schema_module):
-    validators = getattr(schema_module, "custom_validators", None)
-    if callable(validators):
-        validators = validators()
-    if validators and not isinstance(validators, dict):
-        raise TypeError("custom_validators must be a dictionary or a function that returns a dictionary.")
-    return validators or {}
 
 def _apply_defaults_and_check_required(key, value, rules):
     required = rules.get("required", False)
@@ -51,6 +44,7 @@ def _apply_defaults_and_check_required(key, value, rules):
 
     return value
 
+
 def _check_type(key, value, rules):
     expected_type = rules.get("type")
     if expected_type and not isinstance(value, expected_type):
@@ -58,6 +52,7 @@ def _check_type(key, value, rules):
             f"Config key '{key}' must be of type {expected_type.__name__}, "
             f"but got {type(value).__name__}."
         )
+
 
 def _run_validators(key, value, rules, custom_validators, errors):
     if isinstance(value, str) and is_placeholder(value):
@@ -69,7 +64,6 @@ def _run_validators(key, value, rules, custom_validators, errors):
         validator_specs = [rules["validator"]]
 
     for validator_spec in validator_specs:
-        # Inline callable (e.g., a lambda or function)
         if callable(validator_spec):
             try:
                 validator_spec(value)
@@ -77,11 +71,9 @@ def _run_validators(key, value, rules, custom_validators, errors):
                 errors.append(f"[{key}] inline validator: {str(e)}")
             continue
 
-        # Named string
         if isinstance(validator_spec, str):
             validator_name = validator_spec
             args = {}
-        # Parametrized dict
         elif isinstance(validator_spec, dict):
             validator_name = validator_spec.get("name")
             args = {k: v for k, v in validator_spec.items() if k != "name"}
@@ -96,12 +88,11 @@ def _run_validators(key, value, rules, custom_validators, errors):
         else:
             errors.append(
                 f"[{key}] Validator '{validator_name}' not found. "
-                f"Define it in schema.py or ConfigValidator."
+                f"Define it using @CustomValidator.register or in ConfigValidator."
             )
             continue
 
         try:
-            # Handle factory-style (dict-based) validators
             if isinstance(validator_spec, dict):
                 validator_fn = validator_factory(**args)
                 validator_fn(value, key)
@@ -110,18 +101,8 @@ def _run_validators(key, value, rules, custom_validators, errors):
         except Exception as e:
             errors.append(f"[{key}] {validator_name}: {str(e)}")
 
+
 def generate_config_template(schema_module, include_required_placeholders=True) -> dict:
-    """
-    Generate a config dictionary from a schema, including default values and placeholders
-    for required fields that lack defaults.
-
-    Args:
-        schema_module: The loaded schema module.
-        include_required_placeholders (bool): If True, fill missing required keys with "<REQUIRED>".
-
-    Returns:
-        dict: A dictionary representing the template config.
-    """
     schema = _extract_schema(schema_module)
     template = {}
 
@@ -136,16 +117,11 @@ def generate_config_template(schema_module, include_required_placeholders=True) 
 
     return template
 
-def validate_schema_file(schema_module):
-    """
-    Validates the structure and logic of a schema module.
 
-    Raises:
-        ValidationError: If issues are found with the schema.
-    """
+def validate_schema_file(schema_module):
     errors = []
     schema = _extract_schema(schema_module)
-    custom_validators = _extract_custom_validators(schema_module)
+    custom_validators = CustomValidator.get_all_validators()
 
     for key, rules in schema.items():
         if not isinstance(rules, dict):
@@ -166,7 +142,7 @@ def validate_schema_file(schema_module):
             if isinstance(validator_spec, str):
                 if validator_spec not in custom_validators and not hasattr(ConfigValidator, validator_spec):
                     errors.append(
-                        f"[{key}] Validator '{validator_spec}' not found in custom_validators or ConfigValidator."
+                        f"[{key}] Validator '{validator_spec}' not found in registered validators."
                     )
             elif isinstance(validator_spec, dict):
                 name = validator_spec.get("name")
@@ -174,7 +150,7 @@ def validate_schema_file(schema_module):
                     errors.append(f"[{key}] Validator dict missing 'name' key: {validator_spec}")
                 elif name not in custom_validators and not hasattr(ConfigValidator, name):
                     errors.append(
-                        f"[{key}] Validator dict references unknown name '{name}' not found in custom_validators or ConfigValidator."
+                        f"[{key}] Validator dict references unknown name '{name}' not found in registered validators."
                     )
             elif not callable(validator_spec):
                 errors.append(f"[{key}] Invalid validator format: {validator_spec}")
