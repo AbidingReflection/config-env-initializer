@@ -1,3 +1,4 @@
+
 # config-env-initializer
 
 A lightweight and extensible tool for config management, schema validation, and project scaffolding.
@@ -46,49 +47,45 @@ schema = {
 
 ## Adding Custom Validators
 
-Custom validators allow project-specific logic to be applied during validation. You can define and register them by extending the base class and including a `custom_validators` dictionary in your `schema.py`.
+Custom validators can now be registered using a decorator. This avoids manual boilerplate and allows validators to be defined directly in the schema file or project module.
 
 ### Example:
 
 ```python
-from config_env_initializer.config_validator import ConfigValidator
+from config_env_initializer.config_validator import CustomValidator
 
-class CustomValidator(ConfigValidator):
-    @staticmethod
-    def must_be_uppercase(value, key=None):
-        if not isinstance(value, str):
-            raise ValueError(f"{key} must be a string.")
-        if value.upper() != value:
-            raise ValueError(f"{key} must be uppercase.")
+@CustomValidator.register()
+def must_be_uppercase(value, key=None):
+    if not isinstance(value, str):
+        raise ValueError(f"{key} must be a string.")
+    if value.upper() != value:
+        raise ValueError(f"{key} must be uppercase.")
 
-    @staticmethod
-    def length_at_least(min_length):
-        def validator(value, key=None):
-            if not isinstance(value, str):
-                raise ValueError(f"{key} must be a string.")
-            if len(value) < min_length:
-                raise ValueError(f"{key} must be at least {min_length} characters long.")
-        return validator
-
-custom_validators = {
-    **CustomValidator.get_all_validators()
-}
+@CustomValidator.register()
+def length_at_least(value, *, min_length, key=None):
+    if not isinstance(value, str):
+        raise ValueError(f"{key} must be a string.")
+    if len(value) < min_length:
+        raise ValueError(f"{key} must be at least {min_length} characters long.")
 ```
 
-### Using the custom validators in your schema:
+### Using custom validators in your schema:
 
 ```python
 schema = {
     "name": {
         "type": str,
         "required": True,
-        "validators": ["must_be_uppercase", {"name": "length_at_least", "min_length": 5}]
+        "validators": [
+            "must_be_uppercase",
+            {"name": "length_at_least", "min_length": 5}
+        ]
     }
 }
 ```
 
-* For simple validators, use the function name as a string.
-* For parameterized validators, use a dictionary with a `"name"` key and arguments matching the validator factory’s parameters.
+* Use a **string** for simple validators.
+* Use a **dictionary** for parameterized validators. The `"name"` key must match the registered function name.
 
 ---
 
@@ -100,36 +97,34 @@ config-init [COMMAND] [ARGS]
 
 ### `generate-config [SCHEMA_PATH]`
 
-Generate an example YAML configuration based on the provided schema.
+Generate a YAML configuration template from the schema.
 
 * Defaults to `schema/schema.py`
-* Output is written to `configs/generated_config_<timestamp>.yaml`
-* Fields with no default are marked `<REQUIRED>` or `<OPTIONAL>`
+* Outputs to `configs/generated_config_<timestamp>.yaml`
+* Marks missing values with `<REQUIRED>` or `<OPTIONAL>`
 
 ### `validate-config <CONFIG_PATH> [SCHEMA_PATH]`
 
-Validate a configuration YAML file against a schema.
+Validate a config YAML file against a schema.
 
 * Ensures required fields are present
-* Type-checks all values
-* Executes all validators (custom and built-in)
-* Detects placeholder values such as `<REQUIRED>`
-* Returns a list of all validation errors
+* Verifies types and runs all validators
+* Detects unresolved placeholder values
+* Returns a full list of validation errors
 
 ### `validate-schema [SCHEMA_PATH]`
 
-Validate the schema structure itself.
+Validate the schema itself.
 
-* Checks for missing or invalid validators
-* Ensures schema structure is valid
-* Helpful for CI enforcement or local dev sanity checks
+* Verifies structure and validator references
+* Helps catch typos or missing logic early
 
 ### `init-folders [SCHEMA_PATH]`
 
-Create folders as described by schema-based rules.
+Create folders based on schema rules.
 
-* Intended to enforce consistent project structure
-* User confirmation is required before folders are created
+* Uses `project_dirs`, `sub_project_dirs`, and `sub_projects` from the schema
+* Prompts before creating folders
 
 ---
 
@@ -139,7 +134,7 @@ Create folders as described by schema-based rules.
 config-init --help
 ```
 
-Example output:
+Example:
 
 ```
 Config Environment Initializer CLI
@@ -152,13 +147,6 @@ Commands:
 
 usage: config-init [-h] {validate-config,validate-schema,init-folders,generate-config} ...
 
-positional arguments:
-  {validate-config,validate-schema,init-folders,generate-config}
-    validate-config     Validate a config file against the schema.
-    validate-schema     Validate a schema file.
-    init-folders        Create required project directories from schema.
-    generate-config     Generate an example YAML config from the schema.
-
 options:
   -h, --help            show this help message and exit
 ```
@@ -167,7 +155,9 @@ options:
 
 ## Development and Testing
 
-All functionality is covered by unit tests in the `tests/` folder. To run the test suite:
+Unit tests are located in the `tests/` directory.
+
+To run the test suite:
 
 ```bash
 pytest
@@ -178,3 +168,5 @@ pytest
 ## License
 
 This project is licensed under the MIT License. See `LICENSE` for details.
+
+```

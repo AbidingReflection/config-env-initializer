@@ -1,6 +1,6 @@
 # config_env_initializer — Feature Overview
 
-`config_env_initializer` is a reusable Python package designed to standardize and secure configuration handling for script-based projects. It provides structured loading, validation, logging setup, folder initialization, and safe secret handling.
+`config_env_initializer` is a reusable Python package designed to standardize and secure configuration handling for script-based projects. It provides structured loading, schema-driven validation, logging setup, folder initialization, and secure secret management.
 
 ---
 
@@ -10,6 +10,7 @@ The goal of this package is to:
 
 - Load a YAML configuration file
 - Normalize and validate it using a Python-based schema
+- Support extensible, decorator-based custom validators
 - Handle optional external auth credentials securely
 - Prepare the logger using config-defined parameters
 - Initialize project folder structure (logs, output, db, etc.)
@@ -22,61 +23,70 @@ The goal of this package is to:
 ### Config Loading
 
 - Entry point: `ConfigLoader(config_path_str, schema_path_str=None)`
-- Converts string paths to `Path` objects with cross-platform compatibility
-- Falls back to `schema/schema.py` if no schema path is provided
-- Validates that the YAML is a dictionary at the top level
+- Converts input paths to `Path` objects with platform independence
+- Defaults to `schema/schema.py` if no schema path is provided
+- Ensures the loaded YAML config is a dictionary
+- Automatically loads referenced auth credentials
 
 ### Schema Validation
 
 - External schema is a Python file defining:
   - Keys
+  - Types
   - Required status
   - Default values
-  - Validation functions
-- Supports static or schema-local custom validators
-- Validates validator function names and presence
-- Applies all validations before raising error
-- Merges defaults and raises if required fields are missing
+  - Validators
+- Supports:
+  - Built-in validators (e.g. `log_level_valid`)
+  - Decorator-registered custom validators via `@CustomValidator.register()`
+  - Parameterized validators with kwargs (`{"name": ..., ...}`)
+- Unified resolver loads all registered validator sources
+- Validation applies all checks before raising comprehensive error output
+- Default values are merged in; missing required fields trigger errors
 
 ### Config Normalization
 
-- Replaces spaces in config keys with underscores
-- Converts all keys to a consistent case
-- Detects and prevents key collisions after normalization
+- Standardizes config keys by:
+  - Replacing spaces with underscores
+  - Lowercasing keys (or applying consistent casing rules)
+- Prevents collisions from normalization mismatches
 
 ### Auth Handling
 
-- Config keys ending in `_auth_path` point to secure YAML files
-- External auth files must contain key-value pairs
-- Loaded values are wrapped in `SensitiveValue`, which prevents accidental exposure via logs or print
-- Resulting config gains a reserved `config["auth"]` block with nested secret stores (per system name)
+- Config keys ending in `_auth_path` load secure YAML files
+- Auth files must contain flat key-value structures
+- Values are wrapped in `SensitiveValue` to prevent log exposure
+- Loaded into a special `config["auth"]` block under their system names
 
 ### Logging
 
-- Config options control:
+- Configurable options include:
   - `log_dir`
   - `log_level`
   - `log_microseconds`
   - `log_prefix`
-- Logging includes:
-  - Rotating log file handler
+- Logging setup includes:
   - Console handler
-- Microsecond-level precision is optional
-- Loggers are injected into the config under `config["logger"]`
+  - Rotating file handler
+- Microsecond precision is optional
+- Logger instance injected into `config["logger"]`
 
 ### Folder Structure Initialization
 
-- All config keys ending in `_dir` are used to create folders if missing
-- Directory creation is restricted to the project root (config file parent by default)
-- Uses logger for messages when available; otherwise prints
-- Differentiates between already existing and newly created folders
+- Controlled by schema fields:
+  - `project_dirs`, `sub_project_dirs`, and `sub_projects`
+- Config keys ending in `_dir` also trigger directory creation
+- Scoped to the project root (inferred from the config path)
+- Logs or prints creation status with clear differentiation between new and existing folders
 
 ---
 
 ## CLI Entry Point
 
-The package supports CLI usage via:
+The package supports direct CLI usage via the `config-init` command:
 
 ```bash
-python -m config_env_initializer --validate config.yaml
-python -m config_env_initializer --init-folders config.yaml
+config-init validate-config configs/dev.yaml
+config-init validate-schema
+config-init generate-config
+config-init init-folders
