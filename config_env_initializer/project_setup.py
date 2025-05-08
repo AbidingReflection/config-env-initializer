@@ -47,13 +47,16 @@ def get_folder_paths(schema_module, project_root: Path) -> list[Path]:
     project_dirs = getattr(schema_module, "project_dirs", [])
     sub_project_dirs = getattr(schema_module, "sub_project_dirs", [])
     sub_projects = getattr(schema_module, "sub_projects", [])
+    auth_systems = getattr(schema_module, "auth_systems", [])
 
     all_folders = []
 
+    # Top-level project directories
     for key in project_dirs:
         if isinstance(key, str):
             all_folders.append(project_root / key)
 
+    # Sub-project folders
     for key in sub_project_dirs:
         if isinstance(key, str):
             base = project_root / key
@@ -63,6 +66,30 @@ def get_folder_paths(schema_module, project_root: Path) -> list[Path]:
                 for sub in sub_projects:
                     all_folders.append(base / sub)
 
-    # Only return folders that don't already exist
+    # Auth system folders
+    if isinstance(auth_systems, list) and auth_systems:
+        auth_base = project_root / "auth"
+        all_folders.append(auth_base)
+        for system in auth_systems:
+            all_folders.append(auth_base / system)
+
     folders_to_create = [folder for folder in all_folders if not folder.exists()]
     return folders_to_create
+
+
+def create_auth_examples(project_root: Path, schema_module) -> None:
+    """Create example.yaml inside each auth system folder."""
+    auth_systems = getattr(schema_module, "auth_systems", [])
+    if not isinstance(auth_systems, list) or not auth_systems:
+        return
+
+    auth_base = project_root / "auth"
+    for system in auth_systems:
+        example_file = auth_base / system / "example.yaml"
+        if not example_file.exists():
+            try:
+                example_file.write_text(f"# Example credentials for {system}\nusername: <REQUIRED>\npassword: <REQUIRED>\n")
+                print(f"[INFO] Created: {example_file}")
+            except Exception as e:
+                print(f"[WARNING] Failed to create {example_file}: {e}")
+

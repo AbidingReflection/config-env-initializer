@@ -23,9 +23,10 @@ custom_validators = {
 
 
 
-project_dirs = ["config", "db"]
+project_dirs = ["configs", "db", "auth"]
 sub_project_dirs = ["logs", "output"]
 sub_projects = ["extract_1", "extract_2"]
+auth_systems = ["qtest", "jira"]
 
 schema = {
     "project_name": {

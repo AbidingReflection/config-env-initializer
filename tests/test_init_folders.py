@@ -4,8 +4,9 @@ import pytest
 from pathlib import Path
 import importlib.util
 
-from config_env_initializer.project_setup import initialize_folders, get_folder_paths
+from config_env_initializer.project_setup import initialize_folders, get_folder_paths, create_auth_examples
 from config_env_initializer.schema_utils import validate_schema_file
+
 
 def load_schema_module(schema_path: Path):
     spec = importlib.util.spec_from_file_location("config_schema", schema_path)
@@ -105,3 +106,45 @@ def test_existing_folders_are_not_recreated(tmp_path):
 
     for path in precreated:
         assert (path / ".marker").read_text() == "preserve me"
+
+
+def test_auth_folders_and_example_files_created(tmp_path):
+    schema_path = tmp_path / "schema.py"
+    schema_path.write_text(textwrap.dedent("""\
+        schema = {}  # Required for schema validation
+
+        project_dirs = ["config"]
+        auth_systems = ["jira", "qtest"]
+    """))
+    schema_module = load_schema_module(schema_path)
+    validate_schema_file(schema_module)
+
+    folders = get_folder_paths(schema_module, tmp_path)
+    initialize_folders(folders, project_root=tmp_path)
+    create_auth_examples(project_root=tmp_path, schema_module=schema_module)
+
+    for system in ["jira", "qtest"]:
+        folder = tmp_path / "auth" / system
+        assert folder.exists() and folder.is_dir(), f"Missing auth folder: {folder}"
+        example_file = folder / "example.yaml"
+        assert example_file.exists(), f"Missing example file: {example_file}"
+        contents = example_file.read_text()
+        assert "username" in contents and "password" in contents
+
+
+def test_auth_folder_skipped_when_no_auth_systems(tmp_path):
+    schema_path = tmp_path / "schema.py"
+    schema_path.write_text(textwrap.dedent("""\
+        schema = {}  # Required for schema validation
+
+        project_dirs = ["config"]
+    """))
+    schema_module = load_schema_module(schema_path)
+    validate_schema_file(schema_module)
+
+    folders = get_folder_paths(schema_module, tmp_path)
+    initialize_folders(folders, project_root=tmp_path)
+    create_auth_examples(project_root=tmp_path, schema_module=schema_module)
+
+    auth_path = tmp_path / "auth"
+    assert not auth_path.exists(), "Auth folder should not be created when auth_systems is not defined"

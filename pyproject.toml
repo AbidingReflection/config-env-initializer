@@ -13,6 +13,7 @@ dependencies = [
 
 [project.scripts]
 config-init = "config_env_initializer.__main__:main"
+init-config = "config_env_initializer.__main__:main"
 
 [tool.setuptools]
 packages = ["config_env_initializer"]
