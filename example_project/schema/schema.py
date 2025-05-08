@@ -1,26 +1,11 @@
-from config_env_initializer.config_validator import ConfigValidator
+from config_env_initializer.config_validator import CustomValidator
 
-class CustomValidator(ConfigValidator):
-    @staticmethod
-    def string_in_string(*, input_str: str):
-        """
-        Returns a validator that checks if the given input_str is contained within the value.
-
-        Args:
-            input_str (str): The substring that must be present in the value.
-        """
-        def validator(value, key=None):
-            if not isinstance(value, str):
-                raise ValueError(f"{key} must be a string.")
-            if input_str not in value:
-                raise ValueError(f"{key} must contain the substring '{input_str}'. Got: '{value}'")
-
-        return validator
-
-custom_validators = {
-    **CustomValidator.get_all_validators()
-}
-
+@CustomValidator.register()
+def string_in_string(value, *, input_str, key=None):
+    if not isinstance(value, str):
+        raise ValueError(f"{key} must be a string.")
+    if input_str not in value:
+        raise ValueError(f"{key} must contain the substring '{input_str}'. Got: '{value}'")
 
 
 project_dirs = ["configs", "db", "auth"]

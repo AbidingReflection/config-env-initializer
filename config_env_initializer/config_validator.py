@@ -10,37 +10,45 @@ class ConfigValidator:
         return {
             name: method
             for name, method in vars(cls).items()
-            if callable(method) and not name.startswith("_") and name != "get_all_validators" and name != "apply_validators"
+            if callable(method)
+            and not name.startswith("_")
+            and name not in {"get_all_validators", "apply_validators", "resolve_validator"}
         }
 
     @classmethod
-    def apply_validators(cls, value, key, validators, custom_validators):
-        for validator in validators:
-            if callable(validator):
-                validator(value, key)
+    def resolve_validator(cls, validator):
+        """Returns a callable validator function from various formats."""
+        all_validators = {
+            **cls.get_all_validators(),
+            **CustomValidator.get_all_validators()
+        }
 
-            elif isinstance(validator, str):
-                if validator not in custom_validators:
-                    raise ValueError(f"Unknown validator: '{validator}'")
-                custom_validators[validator](value, key)
+        if callable(validator):
+            return validator
 
-            elif isinstance(validator, dict):
-                name = validator.get("name")
-                if not name or name not in custom_validators:
-                    raise ValueError(f"Unknown validator name: '{name}'")
-                validator_factory = custom_validators[name]
+        if isinstance(validator, str):
+            if validator not in all_validators:
+                raise ValueError(f"Unknown validator: '{validator}'")
+            return all_validators[validator]
 
-                # Build validator by calling the factory with args
-                kwargs = {k: v for k, v in validator.items() if k != "name"}
-                try:
-                    validator_fn = validator_factory(**kwargs)
-                except TypeError as te:
-                    raise ValueError(f"Failed to initialize validator '{name}': {te}")
+        if isinstance(validator, dict):
+            name = validator.get("name")
+            if name not in all_validators:
+                raise ValueError(f"Unknown validator name: '{name}'")
+            factory = all_validators[name]
+            kwargs = {k: v for k, v in validator.items() if k != "name"}
+            try:
+                return factory(**kwargs)
+            except TypeError as te:
+                raise ValueError(f"Failed to initialize validator '{name}': {te}")
 
-                validator_fn(value, key)
+        raise ValueError(f"Invalid validator format: {validator}")
 
-            else:
-                raise ValueError(f"Invalid validator format for key '{key}': {validator}")
+    @classmethod
+    def apply_validators(cls, value, key, validators):
+        for validator_spec in validators:
+            validator_fn = cls.resolve_validator(validator_spec)
+            validator_fn(value, key)
 
     @staticmethod
     def log_level_valid(value, key=None):
@@ -78,3 +86,19 @@ class ConfigValidator:
             if not (min_value <= value <= max_value):
                 raise ValueError(f"{key}={value} not in range [{min_value}, {max_value}]")
         return validator
+
+
+class CustomValidator(ConfigValidator):
+    _registry = {}
+
+    @classmethod
+    def register(cls, name=None):
+        def decorator(func):
+            method_name = name or func.__name__
+            cls._registry[method_name] = staticmethod(func)
+            return func
+        return decorator
+
+    @classmethod
+    def get_all_validators(cls):
+        return cls._registry
