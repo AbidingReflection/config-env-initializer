@@ -49,9 +49,14 @@ def validate_config_command(args):
         print("[ERROR] Missing <config.yaml> path.")
         print("Usage: config-init validate-config <config.yaml> [schema.py]")
         sys.exit(1)
+
     config_path = Path(args[0])
     schema_path = Path(args[1]) if len(args) > 1 else Path("schema/schema.py")
+
     try:
+        # Ensure the schema is executed, registering custom validators
+        load_schema_module(schema_path)
+
         errors = validate_config(config_path=config_path, schema_path=schema_path)
         if errors:
             print("[ERROR] Config failed validation:")
@@ -63,6 +68,7 @@ def validate_config_command(args):
     except Exception as e:
         print(f"[ERROR] Unexpected validation error:\n  {e}")
         sys.exit(2)
+
 
 
 def validate_schema_command(args):
