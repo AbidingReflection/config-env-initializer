@@ -1,5 +1,5 @@
 Target Path: C:\Users\decjg\projects\config-env-initializer
-Output Path: C:\Users\decjg\projects\config-env-initializer\scripts\file_tree_output\file_tree_250508Z033411.txt
+Output Path: C:\Users\decjg\projects\config-env-initializer\scripts\file_tree_output\file_tree_250529Z222900.txt
 
 config-env-initializer/
 ├── .gitignore
@@ -32,10 +32,11 @@ config-env-initializer/
 ├── requirements.txt
 ├── scripts/
 │   ├── file_tree_output/
-│   │   └── file_tree_250508Z033411.txt
+│   │   └── file_tree_250529Z222900.txt
 │   └── generate_file_tree.py
 └── tests/
     ├── test_config_validators.py
+    ├── test_custom_validator_integration.py
     ├── test_generate_config.py
     ├── test_init_folders.py
     ├── test_schema_import_behavior.py
@@ -64,4 +65,4 @@ Exclusions:
 
 Summary:
   Folders: 11
-  Files: 29
+  Files: 30

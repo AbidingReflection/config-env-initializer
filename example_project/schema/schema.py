@@ -1,11 +1,14 @@
 from config_env_initializer.config_validator import CustomValidator
 
 @CustomValidator.register()
-def string_in_string(value, *, input_str, key=None):
-    if not isinstance(value, str):
-        raise ValueError(f"{key} must be a string.")
-    if input_str not in value:
-        raise ValueError(f"{key} must contain the substring '{input_str}'. Got: '{value}'")
+def string_in_string(*, substring: str):
+    """Returns a validator that ensures 'substring' is in the string."""
+    def validator(value, key=None):
+        if not isinstance(value, str):
+            raise ValueError(f"{key} must be a string.")
+        if substring not in value:
+            raise ValueError(f"{key} must contain substring '{substring}'")
+    return validator
 
 
 project_dirs = ["configs", "db", "auth"]
@@ -41,7 +44,7 @@ schema = {
     "output_dir": {
         "type": str,
         "required": False,
-        "validators": [{"name": "string_in_string", "input_str": "out"}],  
+        "validators": [{"name": "string_in_string", "substring": "out"}],  
         "default": "output"
     },
     "db_dir": {
