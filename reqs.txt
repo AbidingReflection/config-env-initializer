@@ -1,0 +1,7 @@
+colorama==0.4.6
+-e git+ssh://git@github.com/AbidingReflection/config-env-initializer.git@3cc22982ef42f5a022d83b1d753e871b70a3aac2#egg=config_env_initializer
+iniconfig==2.1.0
+packaging==25.0
+pluggy==1.5.0
+pytest==8.3.5
+PyYAML==6.0.2

@@ -1,7 +1,12 @@
-
 # config-env-initializer
 
-A lightweight and extensible tool for config management, schema validation, and project scaffolding.
+A lightweight, extensible Python tool for structured config management, schema validation, and project scaffolding.
+
+---
+
+## What It’s For
+
+`config-env-initializer` helps Python developers safely load and validate YAML configuration files using Python-defined schemas. It also supports placeholder enforcement, reusable custom validators, secrets management, and automated folder scaffolding — ideal for script-heavy projects, internal tools, data pipelines, and CLI workflows.
 
 ---
 
@@ -13,7 +18,7 @@ Install directly from GitHub:
 pip install git+https://github.com/AbidingReflection/config-env-initializer.git
 ````
 
-Or add the following to your `requirements.txt`:
+Or add this to your `requirements.txt`:
 
 ```
 git+https://github.com/AbidingReflection/config-env-initializer.git
@@ -21,9 +26,9 @@ git+https://github.com/AbidingReflection/config-env-initializer.git
 
 ---
 
-## Usage in Your Project
+## Example Usage
 
-### Define your schema in `schema/schema.py`
+### 1. Define your schema in `schema/schema.py`
 
 ```python
 schema = {
@@ -45,11 +50,38 @@ schema = {
 
 ---
 
-## Adding Custom Validators
+### 2. Generate a config template
 
-Custom validators can now be registered using a decorator. This avoids manual boilerplate and allows validators to be defined directly in the schema file or project module.
+```bash
+config-init generate-config
+```
 
-### Example:
+Outputs:
+
+```yaml
+project_name: <REQUIRED>
+timeout: <REQUIRED>
+log_level: INFO
+debug_mode: false
+```
+
+---
+
+### 3. Validate a config file
+
+```bash
+config-init validate-config example_project/configs/dev.yaml
+```
+
+Returns a list of validation issues (if any) and confirms type safety, required values, and placeholder resolution.
+
+---
+
+## Custom Validators
+
+You can register custom validators using a decorator, enabling rich validation logic directly in your schema.
+
+### Example
 
 ```python
 from config_env_initializer.config_validator import CustomValidator
@@ -69,23 +101,18 @@ def length_at_least(value, *, min_length, key=None):
         raise ValueError(f"{key} must be at least {min_length} characters long.")
 ```
 
-### Using custom validators in your schema:
+Then reference them in your schema:
 
 ```python
-schema = {
-    "name": {
-        "type": str,
-        "required": True,
-        "validators": [
-            "must_be_uppercase",
-            {"name": "length_at_least", "min_length": 5}
-        ]
-    }
+"username": {
+    "type": str,
+    "required": True,
+    "validators": [
+        "must_be_uppercase",
+        {"name": "length_at_least", "min_length": 5}
+    ]
 }
 ```
-
-* Use a **string** for simple validators.
-* Use a **dictionary** for parameterized validators. The `"name"` key must match the registered function name.
 
 ---
 
@@ -95,78 +122,41 @@ schema = {
 config-init [COMMAND] [ARGS]
 ```
 
-### `generate-config [SCHEMA_PATH]`
-
-Generate a YAML configuration template from the schema.
-
-* Defaults to `schema/schema.py`
-* Outputs to `configs/generated_config_<timestamp>.yaml`
-* Marks missing values with `<REQUIRED>` or `<OPTIONAL>`
-
-### `validate-config <CONFIG_PATH> [SCHEMA_PATH]`
-
-Validate a config YAML file against a schema.
-
-* Ensures required fields are present
-* Verifies types and runs all validators
-* Detects unresolved placeholder values
-* Returns a full list of validation errors
-
-### `validate-schema [SCHEMA_PATH]`
-
-Validate the schema itself.
-
-* Verifies structure and validator references
-* Helps catch typos or missing logic early
-
-### `init-folders [SCHEMA_PATH]`
-
-Create folders based on schema rules.
-
-* Uses `project_dirs`, `sub_project_dirs`, and `sub_projects` from the schema
-* Prompts before creating folders
-
----
-
-## Command Line Help
-
-```bash
-config-init --help
-```
+| Command                                       | Description                                                     |
+| --------------------------------------------- | --------------------------------------------------------------- |
+| `generate-config [SCHEMA_PATH]`               | Generate a YAML config template with `<REQUIRED>` placeholders. |
+| `validate-config <CONFIG_PATH> [SCHEMA_PATH]` | Validate a config file against the schema.                      |
+| `validate-schema [SCHEMA_PATH]`               | Check the schema for structural and validator issues.           |
+| `init-folders [SCHEMA_PATH]`                  | Create required folders defined by the schema logic.            |
 
 Example:
 
-```
-Config Environment Initializer CLI
-
-Commands:
-  validate-config <CONFIG> [SCHEMA]     Validate a config file against the schema.
-  validate-schema [SCHEMA]              Validate a schema file (default: schema/schema.py).
-  init-folders [SCHEMA]                 Create required directories based on schema rules.
-  generate-config [SCHEMA]              Generate a YAML config template from the schema.
-
-usage: config-init [-h] {validate-config,validate-schema,init-folders,generate-config} ...
-
-options:
-  -h, --help            show this help message and exit
+```bash
+config-init validate-config configs/dev.yaml
 ```
 
 ---
 
-## Development and Testing
+## Example Project
 
-Unit tests are located in the `tests/` directory.
+Check out [`example_project/`](./example_project) for:
 
-To run the test suite:
+* A working schema
+* Sample config files
+* Folder layout
+* Auth/Secrets example
+
+---
+
+## Running Tests
 
 ```bash
 pytest
 ```
 
----
+Test cases are located in the `tests/` directory and include:
 
-## License
-
-This project is licensed under the MIT License. See `LICENSE` for details.
-
-```
+* Config validation logic
+* Custom validator integration
+* Schema behaviors
+* Folder setup

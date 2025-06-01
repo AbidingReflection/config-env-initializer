@@ -1,6 +1,0 @@
-{
-    "python.analysis.extraPaths": [
-      "./venv/src/config-env-initializer"
-    ]
-  }
-  
