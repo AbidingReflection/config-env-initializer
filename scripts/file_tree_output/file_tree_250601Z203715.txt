@@ -1,9 +1,24 @@
 Target Path: C:\Users\decjg\projects\config-env-initializer
-Output Path: C:\Users\decjg\projects\config-env-initializer\scripts\file_tree_output\file_tree_250529Z222900.txt
+Output Path: C:\Users\decjg\projects\config-env-initializer\scripts\file_tree_output\file_tree_250601Z203715.txt
 
 config-env-initializer/
 ├── .gitignore
 ├── README.md
+├── config-env-project-template/
+│   ├── .gitignore
+│   ├── .vscode/
+│   │   └── settings.json
+│   ├── auth/
+│   │   ├── jira/
+│   │   │   └── example.yaml
+│   │   └── qtest/
+│   │       └── example.yaml
+│   ├── configs/
+│   ├── db/
+│   ├── main.py
+│   ├── requirements.txt
+│   └── schema/
+│       └── schema.py
 ├── config_env_initializer/
 │   ├── __init__.py
 │   ├── __main__.py
@@ -16,23 +31,13 @@ config-env-initializer/
 │   ├── project_setup.py
 │   ├── schema_utils.py
 │   └── sensitive.py
-├── example_project/
-│   ├── auth/
-│   │   ├── jira/
-│   │   │   └── example.yaml
-│   │   └── qtest/
-│   │       └── example.yaml
-│   ├── configs/
-│   ├── db/
-│   ├── main.py
-│   └── schema/
-│       └── schema.py
 ├── features.md
 ├── pyproject.toml
+├── reqs.txt
 ├── requirements.txt
 ├── scripts/
 │   ├── file_tree_output/
-│   │   └── file_tree_250529Z222900.txt
+│   │   └── file_tree_250601Z203715.txt
 │   └── generate_file_tree.py
 └── tests/
     ├── test_config_validators.py
@@ -64,5 +69,5 @@ Exclusions:
     - .DS_Store
 
 Summary:
-  Folders: 11
-  Files: 30
+  Folders: 12
+  Files: 34
