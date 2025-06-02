@@ -36,8 +36,6 @@ class ConfigLoader:
             raise
 
 
-
-
     def _setup_logger(self):
         log_path = Path(self.config["log_dir"])
         use_micro = self.config["log_microseconds"]
@@ -58,8 +56,15 @@ class ConfigLoader:
                 auth_data[system] = {k: SensitiveValue(v) for k, v in raw_auth.items()}
         return auth_data
 
+    # def _resolve_path(self, path_str: str) -> Path:
+    #     return Path(path_str).expanduser().resolve()
+    
     def _resolve_path(self, path_str: str) -> Path:
+        # Normalize Windows-style backslashes to forward slashes before resolving
+        if isinstance(path_str, str):
+            path_str = path_str.replace("\\", "/")
         return Path(path_str).expanduser().resolve()
+
 
     def _default_schema_path(self) -> Path:
         return (Path.cwd() / "schema" / "schema.py").resolve()
