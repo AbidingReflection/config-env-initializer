@@ -59,7 +59,10 @@ class ConfigLoader:
         return auth_data
 
     def _resolve_path(self, path_str: str) -> Path:
-        return Path(path_str).expanduser().resolve()
+        # Normalize Windows-style backslashes to forward slashes for POSIX compatibility
+        cleaned_path = path_str.replace("\\", "/")
+        return Path(cleaned_path).expanduser().resolve()
+
 
     def _default_schema_path(self) -> Path:
         return (Path.cwd() / "schema" / "schema.py").resolve()
