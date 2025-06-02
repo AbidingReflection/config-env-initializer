@@ -11,8 +11,8 @@ from config_env_initializer.exceptions import ValidationError
 
 class ConfigLoader:
     def __init__(self, config_path_str: str, schema_path_str: str = None):
-        self.config_path = self._resolve_path(config_path_str)
-        self.schema_path = self._resolve_path(schema_path_str) if schema_path_str else self._default_schema_path()
+        self.config_path = self._resolve_path(self, config_path_str)
+        self.schema_path = self._resolve_path(self, schema_path_str) if schema_path_str else self._default_schema_path()
 
         self._assert_exists(self.config_path, "YAML config")
         self._assert_exists(self.schema_path, "Schema")
@@ -50,7 +50,7 @@ class ConfigLoader:
         for key, value in self.config.items():
             if key.endswith("_auth_path"):
                 system = key.replace("_auth_path", "")
-                path = self._resolve_path(value)
+                path = self._resolve_path(self, value)
                 self._assert_exists(path, f"{system} auth")
                 raw_auth = self._load_yaml(path)
                 if not isinstance(raw_auth, dict):
@@ -59,9 +59,9 @@ class ConfigLoader:
         return auth_data
 
     def _resolve_path(self, path_str: str) -> Path:
-        # Normalize Windows-style backslashes to forward slashes for POSIX compatibility
-        cleaned_path = path_str.replace("\\", "/")
-        return Path(cleaned_path).expanduser().resolve()
+        # Fix path separators before turning it into a Path object
+        cleaned_path_str = path_str.replace("\\", "/")
+        return Path(cleaned_path_str).expanduser().resolve()
 
 
     def _default_schema_path(self) -> Path:
