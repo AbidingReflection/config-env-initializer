@@ -41,7 +41,7 @@ class ConfigLoader:
         use_micro = self.config["log_microseconds"]
         log_level = self.config["log_level"]
         prefix = self.config.get("log_prefix", "")
-        return prepare_logger(log_path, output_name_prefix=prefix, use_microseconds=use_micro, log_level=log_level)
+        return prepare_logger(self.config, log_path, output_name_prefix=prefix, use_microseconds=use_micro, log_level=log_level)
 
     def _load_auth_data(self) -> dict:
         auth_data = {}

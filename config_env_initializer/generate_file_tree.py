@@ -4,6 +4,16 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Dict, Tuple
 
+DEFAULT_EXCLUDE_CONFIG: Dict[str, List[str]] = {
+    "prefixes": ["generated_config_"],
+    "suffixes": [".swp", ".egg-info"],
+    "filetypes": ["pyc", "log"],
+    "folders": [
+        '.git', 'venv', '__pycache__', 'logs', '.pytest_cache',
+        'output', 'archive', '.DS_Store', 'build'
+    ]
+}
+
 def get_timestamp() -> str:
     return datetime.now(timezone.utc).strftime('%y%m%dZ%H%M%S')
 
@@ -82,41 +92,33 @@ def generate_file_tree(
                 entries = [e for e in entries if not exclude_filter(e)]
 
                 for i, entry in enumerate(entries):
-                    connector = "└──" if i == len(entries) - 1 else "├──"
+                    connector = "└─" if i == len(entries) - 1 else "├─"
                     line = f"{prefix}{connector} {entry.name}"
                     if entry.is_dir():
                         file.write(line + "/\n")
                         folder_count += 1
-                        new_prefix = prefix + ("    " if connector == "└──" else "│   ")
+                        new_prefix = prefix + ("    " if connector == "└─" else "│   ")
                         walk_directory(entry, new_prefix)
                     else:
                         file.write(line + "\n")
                         file_count += 1
             except PermissionError:
-                file.write(f"{prefix}└── [Permission Denied: {current_path}]\n")
+                file.write(f"{prefix}└─ [Permission Denied: {current_path}]\n")
             except Exception as e:
-                file.write(f"{prefix}└── [Error accessing {current_path}: {e}]\n")
+                file.write(f"{prefix}└─ [Error accessing {current_path}: {e}]\n")
 
         walk_directory(target_path)
 
         file.write("\n" + format_exclusions(exclude_config))
         file.write(f"\nSummary:\n  Folders: {folder_count}\n  Files: {file_count}\n")
 
-
 if __name__ == "__main__":
     import config_env_initializer
 
     package_root = Path(config_env_initializer.__file__).resolve().parent
-    target_path = package_root.parent  # Or package_root if you want just the package
+    target_path = package_root.parent
 
-    output_dir = package_root / 'file_tree_output'
-    output_dir.mkdir(exist_ok=True)
+    output_dir = package_root / 'scripts' / 'file_tree_output'
+    output_dir.mkdir(parents=True, exist_ok=True) 
 
-    exclude_config = {
-        "prefixes": ["generated_config_"],
-        "suffixes": [".swp", ".egg-info"],
-        "filetypes": ["pyc", "log"],
-        "folders": ['.git', 'venv', '__pycache__', 'logs', '.pytest_cache', 'output', 'archive', '.DS_Store', 'build', 'scripts']
-    }
-
-    generate_file_tree(target_path, output_dir / 'file_tree', exclude_config)
+    generate_file_tree(target_path, output_dir / 'file_tree', DEFAULT_EXCLUDE_CONFIG)
