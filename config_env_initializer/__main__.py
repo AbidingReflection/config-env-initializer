@@ -6,7 +6,7 @@ from config_env_initializer.project_setup import initialize_folders, get_folder_
 from config_env_initializer.schema_utils import validate_schema_file
 from config_env_initializer.exceptions import ValidationError
 from config_env_initializer.config_utils import generate_config, validate_config
-from ..scripts.generate_file_tree import generate_file_tree, DEFAULT_EXCLUDE_CONFIG
+from config_env_initializer.generate_file_tree import generate_file_tree, DEFAULT_EXCLUDE_CONFIG
 
 def load_schema_module(schema_path: Path):
     spec = importlib.util.spec_from_file_location("config_schema", schema_path)
@@ -132,10 +132,18 @@ def initiate_command(args):
         print(f"[ERROR] Unexpected error during initiation:\n{e}")
         sys.exit(4)
 
+
+def find_project_root(start: Path) -> Path:
+    for parent in [start] + list(start.parents):
+        if (parent / "pyproject.toml").exists() or (parent / ".git").exists():
+            return parent
+    return start
+    
 def file_tree_command(args):
-    project_root = Path.cwd()
-    output_path = project_root / "file_tree_output" / "file_tree"
-    output_path.parent.mkdir(exist_ok=True)
+    project_root = find_project_root(Path.cwd())
+    output_path = project_root / "scripts" / "file_tree_output" / "file_tree"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
     try:
         generate_file_tree(
             target_path=project_root,
@@ -147,6 +155,7 @@ def file_tree_command(args):
     except Exception as e:
         print(f"[ERROR] File tree generation failed:\n{e}")
         sys.exit(5)
+
 
 COMMANDS = {
     "validate-config": validate_config_command,

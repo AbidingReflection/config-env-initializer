@@ -112,13 +112,29 @@ def generate_file_tree(
         file.write("\n" + format_exclusions(exclude_config))
         file.write(f"\nSummary:\n  Folders: {folder_count}\n  Files: {file_count}\n")
 
+def find_project_root(start_path: Path = None) -> Path:
+    start_path = start_path or Path.cwd()
+    for parent in [start_path] + list(start_path.parents):
+        if (parent / "pyproject.toml").exists() or (parent / ".git").exists():
+            return parent
+    return start_path
+
 if __name__ == "__main__":
     import config_env_initializer
 
+    # Start from the location of the installed package
     package_root = Path(config_env_initializer.__file__).resolve().parent
-    target_path = package_root.parent
 
-    output_dir = package_root / 'scripts' / 'file_tree_output'
-    output_dir.mkdir(parents=True, exist_ok=True) 
+    # Walk upward until we find the project root (contains pyproject.toml or .git)
+    def find_project_root(start: Path) -> Path:
+        for parent in [start] + list(start.parents):
+            if (parent / "pyproject.toml").exists() or (parent / ".git").exists():
+                return parent
+        return start  # fallback to whatever we got
 
-    generate_file_tree(target_path, output_dir / 'file_tree', DEFAULT_EXCLUDE_CONFIG)
+    project_root = find_project_root(package_root)
+
+    output_dir = project_root / "scripts" / "file_tree_output"
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    generate_file_tree(project_root, output_dir / "file_tree", DEFAULT_EXCLUDE_CONFIG)

@@ -2,6 +2,10 @@ import sys
 import time
 import sqlite3
 from pathlib import Path
+import config_env_initializer
+
+def _get_sql_path(filename="execution_metrics.sql") -> Path:
+    return Path(config_env_initializer.__file__).resolve().parent / "sql" / filename
 
 
 class Execution_Monitor:
@@ -42,7 +46,7 @@ class Execution_Monitor:
     def _initialize_db_if_missing(self):
         if self.db_path.exists():
             return
-        sql_path = Path(__file__).parent.parent / "sql" / "execution_metrics.sql"
+        sql_path = _get_sql_path()
         with open(sql_path, "r", encoding="utf-8") as f:
             sql = f.read()
         conn = sqlite3.connect(self.db_path)

@@ -19,3 +19,6 @@ ic = "config_env_initializer.__main__:main"
 [tool.setuptools]
 packages = ["config_env_initializer"]
 include-package-data = true
+
+[tool.setuptools.package-data]
+config_env_initializer = ["sql/*.sql"]
