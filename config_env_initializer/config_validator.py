@@ -135,15 +135,26 @@ class ConfigValidator:
         if any(c in value for c in invalid_chars):
             raise ValueError(f"{key} contains invalid characters: {invalid_chars} — Got: '{value}'")
 
+
     @staticmethod
-    def valid_path_string(value, key=None):
-        """Ensures the value can be interpreted as a valid filesystem path."""
+    def valid_filepath_string(value, key=None):
+        """Validate that the input is a string and represents a syntactically valid filesystem path."""
+        label = key or 'Value'
         if not isinstance(value, str):
-            raise ValueError(f"{key} must be a string.")
+            raise ValueError(f"{label} must be a string.")
         try:
-            _ = Path(value)
+            Path(value)
         except Exception as e:
-            raise ValueError(f"{key} is not a valid path string: {e}")
+            raise ValueError(f"{label} is not a valid path: {e}")
+        
+
+    @staticmethod
+    def file_exists(value, key=None):
+        """Ensures the given path exists in the filesystem."""
+        path = Path(value)
+        if not path.exists():
+            raise FileNotFoundError(f"{key or 'Path'} does not exist: {path}")
+
 
     @staticmethod
     def int_no_leading_zero(*, digits=None):
