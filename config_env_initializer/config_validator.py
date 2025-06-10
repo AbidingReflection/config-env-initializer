@@ -104,13 +104,15 @@ class ConfigValidator:
         return validator
 
     @staticmethod
-    def string_in_string(value, *, input_str, key=None):
-        """Ensures a substring is present within the value string."""
-        if not isinstance(value, str):
-            raise ValueError(f"{key} must be a string.")
-        if input_str not in value:
-            raise ValueError(f"{key} must contain the substring '{input_str}'. Got: '{value}'")
-
+    def string_in_string(substring):
+        """Returns a validator function that checks if substring is in the value."""
+        def validator(value, key=None):
+            if not isinstance(value, str):
+                raise ValueError(f"{key or 'Value'} must be a string.")
+            if substring not in value:
+                raise ValueError(f"{key or 'Value'} must contain the substring '{substring}'. Got: '{value}'")
+        return validator
+    
     @staticmethod
     def dict_must_have_values(*, required_values):
         """Returns a validator to ensure dict values include required items."""
