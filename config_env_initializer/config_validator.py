@@ -1,6 +1,7 @@
 """ConfigValidator: Built-in and custom validation logic for YAML config values."""
 
 from pathlib import Path
+import platform
 
 REQUIRED_PLACEHOLDER = "<REQUIRED>"
 OPTIONAL_PLACEHOLDER = "<OPTIONAL>"
@@ -134,6 +135,38 @@ class ConfigValidator:
         invalid_chars = set(r':\\/?*[]')
         if any(c in value for c in invalid_chars):
             raise ValueError(f"{key} contains invalid characters: {invalid_chars} — Got: '{value}'")
+        
+
+    @staticmethod
+    def valid_filename_string(value, key=None):
+        """Validate that the input is a syntactically valid filename."""
+        label = key or "Value"
+        
+        if not isinstance(value, str):
+            raise ValueError(f"{label} must be a string.")
+        
+        value = value.strip()
+        if not value:
+            raise ValueError(f"{label} must not be empty or whitespace.")
+        
+        # Check for forbidden characters
+        forbidden_chars = r'<>:"/\\|?*\0'  # includes null byte
+        if any(c in value for c in forbidden_chars):
+            raise ValueError(f"{label} contains forbidden characters: {forbidden_chars}")
+        
+        # Windows reserved filenames (case-insensitive)
+        if platform.system() == "Windows":
+            reserved_names = {
+                "CON", "PRN", "AUX", "NUL",
+                *(f"COM{i}" for i in range(1, 10)),
+                *(f"LPT{i}" for i in range(1, 10)),
+            }
+            name_without_ext = value.split('.')[0].upper()
+            if name_without_ext in reserved_names:
+                raise ValueError(f"{label} is a reserved filename on Windows: '{value}'")
+        
+        return True
+
 
 
     @staticmethod

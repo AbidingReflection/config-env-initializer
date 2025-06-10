@@ -135,7 +135,7 @@ class Execution_Monitor:
                     raise
         raise Exception("SQLite write failed after retries")
 
-    def run_section(self, section_name, func):
+    def run_section(self, section_name, func, *args, **kwargs):
         """Times a section automatically and records it to the DB."""
         self.current_section = section_name
         self._insert(
@@ -149,7 +149,7 @@ class Execution_Monitor:
         self.logger.info(f'[Execution_Monitor] Section "{section_name}" started.')
 
         try:
-            result = func()
+            result = func(*args, **kwargs)
             self.logger.info(f'[Execution_Monitor] Section "{section_name}" ended successfully.')
             return result
         except Exception as e:
