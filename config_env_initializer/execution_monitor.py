@@ -31,7 +31,7 @@ class Execution_Monitor:
 
     def __enter__(self):
         """Enters context manager."""
-        self.logger.info(f'[Execution_Monitor] Script "{self.script_name}" started.')
+        self.logger.info(f'[Execution_Monitor] Script monitoring for "{self.script_name}" started.')
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -43,6 +43,9 @@ class Execution_Monitor:
             self.logger.info(f'[Execution_Monitor] Script "{self.script_name}" completed successfully.')
         self.finalize_script_db_record()
         return False  # Let exceptions propagate
+    
+    def __repr__(self):
+        return f'<Execution_Monitor script="{self.script_name}" db="{self.db_path}">'
 
     def _resolve_db_path(self):
         """Returns the resolved DB path, using default if missing."""
@@ -66,6 +69,8 @@ class Execution_Monitor:
         conn.commit()
         conn.close()
         self.logger.info(f"[Execution_Monitor] Created new DB using {sql_path}")
+
+
 
     def _connect_to_db(self):
         """Establishes DB connection with WAL mode."""
@@ -142,8 +147,17 @@ class Execution_Monitor:
             }
         )
         self.logger.info(f'[Execution_Monitor] Section "{section_name}" started.')
+
         try:
-            return func()
+            result = func()
+            self.logger.info(f'[Execution_Monitor] Section "{section_name}" ended successfully.')
+            return result
+        except Exception as e:
+            self.execution_failed = True  # mark whole script as failed
+            self.logger.error(
+                f'[Execution_Monitor] Section "{section_name}" failed: {type(e).__name__}: {e}'
+            )
+            raise  # let it propagate to __exit__
         finally:
             self._update(
                 "section_executions",
@@ -154,7 +168,6 @@ class Execution_Monitor:
                     "end_ts": None
                 }
             )
-            self.logger.info(f'[Execution_Monitor] Section "{section_name}" ended.')
             self.current_section = None
 
     def finalize_script_db_record(self, end_ts=None):

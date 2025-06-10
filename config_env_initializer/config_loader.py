@@ -2,6 +2,7 @@ from pathlib import Path
 import yaml
 import importlib.util
 from pprint import pformat
+import textwrap
 
 from config_env_initializer.schema_utils import validate_config_against_schema
 from config_env_initializer.sensitive import SensitiveValue, mask_config_for_logging
@@ -37,10 +38,11 @@ class ConfigLoader:
         script_name = self.config.get('script_name', 'script_execution')
         execution_monitor: Execution_Monitor = Execution_Monitor(self.config, script_name)
         self.config["execution_monitor"] = execution_monitor
-        self.logger.info("Execution monitor successfully initialized.\nConfig:\n%s", pformat(self.config))
+        self.logger.info("Execution monitor successfully initialized")
 
+        formatted_config_output = textwrap.indent(pformat(self.config), prefix="\t")
+        self.logger.info("Loaded and validated config:\n%s", formatted_config_output)
 
-        self.logger.info(f"Loaded and validated config:",)
 
     def _load_and_validate_config(self, raw_config: dict, schema_module) -> dict:
         """Normalizes and validates raw config against a schema."""
