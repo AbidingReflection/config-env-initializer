@@ -1,5 +1,5 @@
 colorama==0.4.6
--e git+ssh://git@github.com/AbidingReflection/config-env-initializer.git@dcfea9f11c3b7559388f691c69588a7d82e0dc98#egg=config_env_initializer
+-e git+ssh://git@github.com/AbidingReflection/config-env-initializer.git@6ede9935ef4a3dd36e4b9aaff265ecb1371f3d3e#egg=config_env_initializer
 iniconfig==2.1.0
 packaging==25.0
 pluggy==1.5.0

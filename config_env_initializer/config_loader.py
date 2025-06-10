@@ -6,6 +6,7 @@ from config_env_initializer.schema_utils import validate_config_against_schema
 from config_env_initializer.sensitive import SensitiveValue, mask_config_for_logging
 from config_env_initializer.config_normalizer import normalize_config_keys
 from config_env_initializer.logger_setup import prepare_logger
+from config_env_initializer.execution_monitor import Execution_Monitor
 
 from config_env_initializer.exceptions import ValidationError
 
@@ -27,6 +28,10 @@ class ConfigLoader:
         self.config["auth"] = self.auth
         self.config["logger"] = self.logger
         self.auth_keys = list(self.auth.keys())
+
+        script_name = self.config.get('script_name', 'script_execution')
+        execution_monitor: Execution_Monitor = Execution_Monitor(self.config, script_name)
+        self.config["execution_monitor"] = execution_monitor
 
     def _load_and_validate_config(self, raw_config: dict, schema_module) -> dict:
         normalized_config = normalize_config_keys(raw_config)

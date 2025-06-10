@@ -41,8 +41,9 @@ def prepare_logger(
     """
     log_path.mkdir(parents=True, exist_ok=True)
     timestamp_str = datetime.now().strftime('%Y_%m_%d_%H%M%S')
-    log_file = log_path / f"{output_name_prefix}{timestamp_str}.log"
-    CONFIG['log_file_path'] = log_file
+    log_file_name = f"{output_name_prefix}{timestamp_str}.log"
+    log_file = log_path / log_file_name
+    CONFIG['log_file_name'] = log_file_name
 
     logger_name = f"config_logger_{output_name_prefix or 'default'}"
     logger = logging.getLogger(logger_name)

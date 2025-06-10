@@ -1,0 +1,80 @@
+Target Path: C:\Users\decjg\projects\config-env-initializer
+Output Path: C:\Users\decjg\projects\config-env-initializer\scripts\file_tree_output\file_tree_250610Z000727.txt
+
+config-env-initializer/
+├─ .gitignore
+├─ README.md
+├─ config-env-project-template/
+│   ├─ .gitignore
+│   ├─ .vscode/
+│   │   └─ settings.json
+│   ├─ auth/
+│   │   ├─ jira/
+│   │   │   └─ example.yaml
+│   │   └─ qtest/
+│   │       └─ example.yaml
+│   ├─ configs/
+│   ├─ db/
+│   ├─ main.py
+│   ├─ requirements.txt
+│   └─ schema/
+│       └─ schema.py
+├─ config_env_initializer/
+│   ├─ __init__.py
+│   ├─ __main__.py
+│   ├─ config_loader.py
+│   ├─ config_normalizer.py
+│   ├─ config_utils.py
+│   ├─ config_validator.py
+│   ├─ exceptions.py
+│   ├─ execution_monitor.py
+│   ├─ generate_file_tree.py
+│   ├─ logger_setup.py
+│   ├─ project_setup.py
+│   ├─ schema_utils.py
+│   ├─ sensitive.py
+│   └─ sql/
+│       ├─ execution_metrics.sql
+│       └─ execution_metrics_update.sql
+├─ features.md
+├─ pyproject.toml
+├─ requirements.txt
+├─ scripts/
+│   ├─ archive_logs.py
+│   ├─ file_tree_output/
+│   │   └─ file_tree_250610Z000727.txt
+│   └─ generate_file_tree.py
+└─ tests/
+    ├─ test_config_validators.py
+    ├─ test_custom_validator_integration.py
+    ├─ test_execution_monitor.py
+    ├─ test_generate_config.py
+    ├─ test_init_folders.py
+    ├─ test_schema_import_behavior.py
+    ├─ test_schema_validation.py
+    ├─ test_validate_config.py
+    └─ test_validation_errors.py
+
+Exclusions:
+  Prefixes:
+    - generated_config_
+  Suffixes:
+    - .swp
+    - .egg-info
+  Filetypes:
+    - pyc
+    - log
+  Folders:
+    - .git
+    - venv
+    - __pycache__
+    - logs
+    - .pytest_cache
+    - output
+    - archive
+    - .DS_Store
+    - build
+
+Summary:
+  Folders: 13
+  Files: 39
