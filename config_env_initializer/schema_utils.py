@@ -1,3 +1,5 @@
+"""Validation logic for checking user config dictionaries against a schema."""
+
 from copy import deepcopy
 from config_env_initializer.config_validator import ConfigValidator, CustomValidator
 from config_env_initializer.exceptions import ValidationError
@@ -5,6 +7,7 @@ from config_env_initializer.config_utils import is_placeholder
 
 
 def validate_config_against_schema(config: dict, schema_module) -> dict:
+    """Validates a config dictionary against a schema module."""
     schema = _extract_schema(schema_module)
     custom_validators = CustomValidator.get_all_validators()
     validated = deepcopy(config)
@@ -27,6 +30,7 @@ def validate_config_against_schema(config: dict, schema_module) -> dict:
 
 
 def _extract_schema(schema_module):
+    """Extracts the schema dictionary from the given module."""
     schema = getattr(schema_module, "schema", None)
     if not isinstance(schema, dict):
         raise ValueError("schema.py must define a `schema` dictionary.")
@@ -34,6 +38,7 @@ def _extract_schema(schema_module):
 
 
 def _apply_defaults_and_check_required(key, value, rules):
+    """Applies default values or raises if a required key is missing."""
     required = rules.get("required", False)
     default = rules.get("default", None)
 
@@ -46,6 +51,7 @@ def _apply_defaults_and_check_required(key, value, rules):
 
 
 def _check_type(key, value, rules):
+    """Validates that the config value is of the expected type."""
     expected_type = rules.get("type")
     if expected_type and not isinstance(value, expected_type):
         raise TypeError(
@@ -55,6 +61,7 @@ def _check_type(key, value, rules):
 
 
 def _run_validators(key, value, rules, custom_validators, errors):
+    """Runs any attached validators on the given key/value."""
     if isinstance(value, str) and is_placeholder(value):
         errors.append(f"[{key}] contains unresolved placeholder: {value}")
         return
@@ -65,6 +72,7 @@ def _run_validators(key, value, rules, custom_validators, errors):
 
     for validator_spec in validator_specs:
         if callable(validator_spec):
+            # Inline callable validator
             try:
                 validator_spec(value)
             except Exception as e:
@@ -103,6 +111,7 @@ def _run_validators(key, value, rules, custom_validators, errors):
 
 
 def generate_config_template(schema_module, include_required_placeholders=True) -> dict:
+    """Generates a config dictionary template based on the schema."""
     schema = _extract_schema(schema_module)
     template = {}
 
@@ -119,6 +128,7 @@ def generate_config_template(schema_module, include_required_placeholders=True) 
 
 
 def validate_schema_file(schema_module):
+    """Checks schema structure and validator references for correctness."""
     errors = []
     schema = _extract_schema(schema_module)
     custom_validators = CustomValidator.get_all_validators()

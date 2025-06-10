@@ -1,9 +1,9 @@
-import os
 import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Dict, Tuple
 
+# Default exclusion patterns for file tree generation
 DEFAULT_EXCLUDE_CONFIG: Dict[str, List[str]] = {
     "prefixes": ["generated_config_"],
     "suffixes": [".swp", ".egg-info"],
@@ -15,13 +15,16 @@ DEFAULT_EXCLUDE_CONFIG: Dict[str, List[str]] = {
 }
 
 def get_timestamp() -> str:
+    """Returns current UTC time formatted as YYMMDDZHHMMSS."""
     return datetime.now(timezone.utc).strftime('%y%m%dZ%H%M%S')
 
 def extract_number(entry: str) -> int:
+    """Extracts leading digits from a string, or returns infinity if none found."""
     match = re.match(r'^(\d+)', entry)
     return int(match.group(1)) if match else float('inf')
 
 def archive_existing_file_trees(output_prefix: Path) -> None:
+    """Moves existing output files to an 'archive' subdirectory with a timestamp."""
     archive_dir = output_prefix.parent / 'archive'
     archive_dir.mkdir(exist_ok=True)
 
@@ -36,6 +39,7 @@ def archive_existing_file_trees(output_prefix: Path) -> None:
             print(f"Failed to archive {file_path.name}: {e}")
 
 class ExclusionFilter:
+    """Callable object to filter paths by configured prefixes, suffixes, types, and folders."""
     def __init__(self, prefixes: List[str], suffixes: List[str], filetypes: List[str], folders: List[str]):
         self.prefixes = prefixes
         self.suffixes = suffixes
@@ -43,6 +47,7 @@ class ExclusionFilter:
         self.folders = set(folders)
 
     def __call__(self, entry: Path) -> bool:
+        """Returns True if entry matches any exclusion criteria."""
         return (
             any(entry.name.startswith(prefix) for prefix in self.prefixes) or
             any(entry.name.endswith(suffix) for suffix in self.suffixes) or
@@ -51,6 +56,7 @@ class ExclusionFilter:
         )
 
 def format_exclusions(exclude_config: Dict[str, List[str]]) -> str:
+    """Formats the exclusion config dictionary for display."""
     output = "Exclusions:\n"
     for key, values in exclude_config.items():
         output += f"  {key.capitalize()}:\n"
@@ -63,6 +69,7 @@ def generate_file_tree(
     exclude_config: Dict[str, List[str]],
     archive_previous: bool = True
 ) -> None:
+    """Generates a file tree of the target path with exclusions and summary."""
     exclude_filter = ExclusionFilter(
         exclude_config.get("prefixes", []),
         exclude_config.get("suffixes", []),
@@ -86,6 +93,7 @@ def generate_file_tree(
         file.write(f"{target_path.name}/\n")
 
         def walk_directory(current_path: Path, prefix: str = "") -> Tuple[int, int]:
+            """Recursively walks and writes directory contents with tree-style formatting."""
             nonlocal file_count, folder_count
             try:
                 entries = sorted(current_path.iterdir(), key=lambda e: (extract_number(e.name), e.name))
@@ -113,28 +121,9 @@ def generate_file_tree(
         file.write(f"\nSummary:\n  Folders: {folder_count}\n  Files: {file_count}\n")
 
 def find_project_root(start_path: Path = None) -> Path:
+    """Finds the project root by locating pyproject.toml or .git upwards from a path."""
     start_path = start_path or Path.cwd()
     for parent in [start_path] + list(start_path.parents):
         if (parent / "pyproject.toml").exists() or (parent / ".git").exists():
             return parent
     return start_path
-
-if __name__ == "__main__":
-    import config_env_initializer
-
-    # Start from the location of the installed package
-    package_root = Path(config_env_initializer.__file__).resolve().parent
-
-    # Walk upward until we find the project root (contains pyproject.toml or .git)
-    def find_project_root(start: Path) -> Path:
-        for parent in [start] + list(start.parents):
-            if (parent / "pyproject.toml").exists() or (parent / ".git").exists():
-                return parent
-        return start  # fallback to whatever we got
-
-    project_root = find_project_root(package_root)
-
-    output_dir = project_root / "scripts" / "file_tree_output"
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    generate_file_tree(project_root, output_dir / "file_tree", DEFAULT_EXCLUDE_CONFIG)

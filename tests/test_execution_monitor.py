@@ -4,11 +4,21 @@ from config_env_initializer.execution_monitor import Execution_Monitor
 import time
 
 
+import logging
+
 def test_execution_monitor_success(tmp_path):
     """Marks script as successful when no exceptions occur."""
     db_path = tmp_path / "execution.db"
     sql_path = Path(__file__).parent.parent / "config_env_initializer" / "sql" / "execution_metrics.sql"
-    CONFIG = {"execution_monitor_db_path": str(db_path)}
+
+    dummy_logger = logging.getLogger("test_logger_success")
+    dummy_logger.addHandler(logging.NullHandler())  # Prevents output
+    dummy_logger.setLevel(logging.DEBUG)
+
+    CONFIG = {
+        "execution_monitor_db_path": str(db_path),
+        "logger": dummy_logger
+    }
 
     db_path.parent.mkdir(parents=True, exist_ok=True)
     with open(sql_path, "r", encoding="utf-8") as f:
@@ -29,7 +39,15 @@ def test_execution_monitor_failure(tmp_path):
     """Marks script as failed when an uncaught exception occurs."""
     db_path = tmp_path / "execution.db"
     sql_path = Path(__file__).parent.parent / "config_env_initializer" / "sql" / "execution_metrics.sql"
-    CONFIG = {"execution_monitor_db_path": str(db_path)}
+
+    dummy_logger = logging.getLogger("test_logger_failure")
+    dummy_logger.addHandler(logging.NullHandler())
+    dummy_logger.setLevel(logging.DEBUG)
+
+    CONFIG = {
+        "execution_monitor_db_path": str(db_path),
+        "logger": dummy_logger
+    }
 
     with open(sql_path, "r", encoding="utf-8") as f:
         sqlite3.connect(db_path).executescript(f.read())
@@ -55,7 +73,15 @@ def test_section_start_and_end_timestamps(tmp_path):
     """Ensures section start and end timestamps are properly recorded."""
     db_path = tmp_path / "execution.db"
     sql_path = Path(__file__).parent.parent / "config_env_initializer" / "sql" / "execution_metrics.sql"
-    CONFIG = {"execution_monitor_db_path": str(db_path)}
+
+    dummy_logger = logging.getLogger("test_logger_timestamps")
+    dummy_logger.addHandler(logging.NullHandler())
+    dummy_logger.setLevel(logging.DEBUG)
+
+    CONFIG = {
+        "execution_monitor_db_path": str(db_path),
+        "logger": dummy_logger
+    }
 
     with open(sql_path, "r", encoding="utf-8") as f:
         sqlite3.connect(db_path).executescript(f.read())
@@ -70,13 +96,21 @@ def test_section_start_and_end_timestamps(tmp_path):
 
     assert end > start
     assert duration >= 50
-
+    
 
 def test_multiple_sections_are_recorded(tmp_path):
     """Records multiple sequential sections under one script."""
     db_path = tmp_path / "execution.db"
     sql_path = Path(__file__).parent.parent / "config_env_initializer" / "sql" / "execution_metrics.sql"
-    CONFIG = {"execution_monitor_db_path": str(db_path)}
+
+    dummy_logger = logging.getLogger("test_logger_multi_section")
+    dummy_logger.addHandler(logging.NullHandler())
+    dummy_logger.setLevel(logging.DEBUG)
+
+    CONFIG = {
+        "execution_monitor_db_path": str(db_path),
+        "logger": dummy_logger
+    }
 
     with open(sql_path, "r", encoding="utf-8") as f:
         sqlite3.connect(db_path).executescript(f.read())
@@ -92,12 +126,20 @@ def test_multiple_sections_are_recorded(tmp_path):
 
     assert sections == {"part1", "part2"}
 
-
+    
 def test_section_failure_does_not_mark_script_failed(tmp_path):
     """Ensures exceptions handled inside a section do not mark script as failed."""
     db_path = tmp_path / "execution.db"
     sql_path = Path(__file__).parent.parent / "config_env_initializer" / "sql" / "execution_metrics.sql"
-    CONFIG = {"execution_monitor_db_path": str(db_path)}
+
+    dummy_logger = logging.getLogger("test_logger_handled_error")
+    dummy_logger.addHandler(logging.NullHandler())
+    dummy_logger.setLevel(logging.DEBUG)
+
+    CONFIG = {
+        "execution_monitor_db_path": str(db_path),
+        "logger": dummy_logger
+    }
 
     with open(sql_path, "r", encoding="utf-8") as f:
         sqlite3.connect(db_path).executescript(f.read())
