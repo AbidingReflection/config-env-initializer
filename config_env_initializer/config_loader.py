@@ -27,11 +27,13 @@ class ConfigLoader:
 
         self.config["auth"] = self.auth
         self.config["logger"] = self.logger
+        self.logger.info(f"Logger successfully initialized: {self.logger}")
         self.auth_keys = list(self.auth.keys())
 
         script_name = self.config.get('script_name', 'script_execution')
         execution_monitor: Execution_Monitor = Execution_Monitor(self.config, script_name)
         self.config["execution_monitor"] = execution_monitor
+        self.logger.info(f"Execution monitor successfully initialized.")
 
     def _load_and_validate_config(self, raw_config: dict, schema_module) -> dict:
         normalized_config = normalize_config_keys(raw_config)
